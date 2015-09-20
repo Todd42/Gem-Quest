@@ -1,1 +1,295 @@
-https://www.dropbox.com/s/enb675ptf2ablr1/Game%20Design%20Project%203.rar?dl=0
+DL Link: https://www.dropbox.com/s/enb675ptf2ablr1/Game%20Design%20Project%203.rar?dl=0
+
+Some Code Examples:
+
+The different rooms of the game are seamlessly put together with code like this:
+  currenty = y
+  mask_index = mask_change
+  if room = room_tutorial and hspeed > 0{
+      room_goto(room_town)
+      y = currenty
+      x = 387
+      hspeed = current_hspeed
+  } else if room = room_town and hspeed < 0{
+      room_goto(room_tutorial)
+      y = currenty
+      x = 2338
+      hspeed = current_hspeed
+  }
+This teleports the player from the tutorial area to the town area, but it does so in a way that the player doesn't
+notice any change. To them it just looks as if they kept walking and arrived at a new place. This keeps any one room
+from being too large or using too many resources without any noticable screen transitions.
+----------------------------------------------------------------------------------------
+This script controls the conversation between any NPC and the player:
+  //arguments from the NPC being assigned
+  //and values being initialized
+  name = argument0
+  test[] = argument1
+  spd = argument2
+  i = argument3
+  dialogue = argument4
+  length = array_length_1d(test[])
+  out = ""
+  depth = -10
+  //set the font
+  draw_set_font(text_font)
+  draw_set_color(c_white)
+  //if there are no more messages close everything out
+  if i == length - 1{ 
+      player.image_speed = 0.4
+      player.talking = false
+      textbox.open = false
+      depth = -3
+      //returning flase ends the conversation
+      return false
+  }
+  else{
+  //player is now talking
+  player.talking = true
+  player.image_speed = 0
+  //spawn a blank textbox
+  if !instance_exists(textbox){
+      if player.y > (view_yview + 300){
+          instance_create(view_xview, view_yview + 70/*341*/, textbox)
+      }
+  }   
+  //draw the NPC's name in the right spot
+  draw_text(textbox.x + 20, textbox.y + 10, name)
+  
+  //out reads out the current line of text
+  out = string_copy(test[i],1, spd)
+  if spd < string_length(test[i]){
+      if !audio_is_playing(sound18)
+          audio_play_sound(sound18,0,1)
+      }else audio_stop_sound(sound18)
+  //get ready to draw the NPC's messages
+  draw_set_valign(fa_top)
+  draw_set_halign(fa_left)
+  
+  //draw the current message
+  draw_text_ext(textbox.x + 15, textbox.y + 50, out, 32, 680)
+  
+  //return true to continue the conversation
+  return true
+  }
+  
+  NPC's have variables that plug into this script when it's called. Then the text box pops up and the player
+  can read through it at their own pace.
+----------------------------------------------------------------------------------------------------------  
+  
+This code, while a bit debated within our group one whether or not it could be simplified, controls the shooting
+of the gun. It can shoot in 8 directions total, but it cannot shoot opposite of the direction the player is facing. The
+player must turn around to shoot that way, so it can only shoot in 5 directions at any one time:
+  if keyboard_check_pressed(vk_left) and keyboard_check_pressed(vk_up){
+    player.dir = "left"
+    player.vdir = "up"
+    //sprite_index = leftGunUpDia
+    if instance_number(obj_bullet) <= 3 and player.gunAcquired and player.lastdirection = -1{
+        instance_create(player.x - 5, player.y + 25, obj_bullet)
+    }
+  }
+  else if keyboard_check_pressed(vk_left) and keyboard_check_pressed(vk_down){
+      player.dir = "left"
+      player.vdir = "down"
+      //sprite_index = leftGunDownDiag
+      if instance_number(obj_bullet) <= 3 and player.gunAcquired and player.lastdirection = -1{
+          instance_create(player.x - 9, player.y + 50, obj_bullet)
+      }
+  }
+  else if keyboard_check_pressed(vk_right) and keyboard_check_pressed(vk_up){
+      player.dir = "right"
+      player.vdir = "up"
+      //sprite_index = rightGunUpDiag
+      if instance_number(obj_bullet) <= 3 and player.gunAcquired and player.lastdirection = 1{
+          instance_create(player.x + 32, player.y + 25, obj_bullet)
+      }
+  }
+  else if keyboard_check_pressed(vk_right) and keyboard_check_pressed(vk_down){
+      player.dir = "right"
+      player.vdir = "down"
+      //sprite_index = rightGunDownDiag
+      if instance_number(obj_bullet) <= 3 and player.gunAcquired and player.lastdirection = 1{
+          instance_create(player.x + 35, player.y + 35, obj_bullet)
+      }
+  }
+  else if keyboard_check_pressed(vk_left){
+      player.dir = "left"
+      //sprite_index = leftGunFront
+      if instance_number(obj_bullet) <= 3 and player.gunAcquired and player.lastdirection = -1{
+          instance_create(player.x - 12, player.y + 34, obj_bullet)
+      }
+  }
+  else if keyboard_check_pressed(vk_right){
+      player.dir = "right"
+      //sprite_index = rightGunFront
+      if instance_number(obj_bullet) <= 3 and player.gunAcquired and player.lastdirection = 1{
+          instance_create(player.x + 38, player.y + 34, obj_bullet)
+      }
+  }
+  else if keyboard_check_pressed(vk_up){
+      player.vdir = "up"
+      if player.lastdirection = -1{
+          //sprite_index = leftGunUp
+      } else{
+          //sprite_index = rightGunUp
+      }
+      if instance_number(obj_bullet) <= 3 and player.gunAcquired{
+          if player.lastdirection = -1{
+              instance_create(player.x + 10, player.y + 16, obj_bullet)
+          }else{
+              instance_create(player.x + 18, player.y + 16, obj_bullet)
+          }
+      }
+  }
+  else if keyboard_check_pressed(vk_down){
+      player.vdir = "down"
+      if player.lastdirection = -1{
+          //sprite_index = leftGunDown
+      } else{
+          //sprite_index = rightGunDown
+      }
+      if instance_number(obj_bullet) <= 3 and player.gunAcquired{
+          if player.lastdirection = -1{
+              instance_create(player.x + 5, player.y + 58, obj_bullet)
+          }else{
+              instance_create(player.x + 23, player.y + 58, obj_bullet)
+          }
+      }
+  }
+  else if player.gunAcquired{
+      /*with(player){
+          walking_left = leftWalkGunFront
+          walking_right = rightWalkGunFront
+          standing_left = leftStandGunFront
+          standing_right = rightStandGunFront
+          jump_left = leftJumpGunFront
+          jump_right = rightJumpGunFront
+      }*/
+  }
+  if keyboard_check_released(vk_up) or keyboard_check_released(vk_down){
+      player.vdir = "none"
+  }
+  --------------------------------------------------------------------------------------
+  While the above controls the shooting, this next code segment adjusts the sprite of the gun to the proper position
+  at all times:
+   if gunAcquired and instance_number(obj_gun) == 1{
+        obj_gun.y = y + 34
+        obj_gun.direction = direction
+        obj_gun.speed = speed
+            
+        if dir == "left" and !keyboard_check_pressed(vk_up) and !keyboard_check(vk_down){
+            if sprite_index = standing_left or sprite_index = walking_left or sprite_index = jump_left{
+                walking_left = leftWalkGunFront
+                standing_left = leftStandGunFront
+                jump_left = leftJumpGunFront
+            }
+        }
+        if dir == "right" and !keyboard_check_pressed(vk_up) and !keyboard_check(vk_down){
+            if sprite_index = standing_right or sprite_index = walking_right or sprite_index = jump_right{
+                walking_right = rightWalkGunFront
+                standing_right = rightStandGunFront
+                jump_right = rightJumpGunFront
+            }
+        }
+        if vdir == "up" and !keyboard_check(vk_left) and !keyboard_check(vk_right){
+            walking_left = leftWalkGunUp
+            walking_right = rightWalkGunUp
+            standing_left = leftStandGunUp
+            standing_right = rightStandGunUp
+            jump_left = leftJumpGunUp
+            jump_right = rightJumpGunUp
+        }
+        if vdir == "down" and !keyboard_check(vk_left) and !keyboard_check(vk_right){
+            walking_left = leftWalkGunDown
+            walking_right = rightWalkGunDown
+            standing_left = leftStandGunDown
+            standing_right = rightStandGunDown
+            jump_left = leftJumpGunDown
+            jump_right = rightJumpGunDown
+        }
+        if dir == "left" and vdir == "up" and keyboard_check(vk_left) and keyboard_check(vk_up){
+                walking_left = leftWalkGunUpDiag
+                standing_left = leftStandGunUpDiag
+                jump_left = leftJumpGunUpDiag
+        }
+        if dir == "left" and vdir == "down" and keyboard_check(vk_left) and keyboard_check(vk_down){
+            if sprite_index = standing_left or sprite_index = walking_left or sprite_index = jump_left{
+                walking_left = leftWalkGunDownDiag
+                standing_left = leftStandGunDownDiag
+                jump_left = leftJumpGunDownDiag
+            }
+        }
+        if dir == "right" and vdir == "up" and keyboard_check(vk_right) and keyboard_check(vk_up){
+                walking_right = rightWalkGunUpDiag
+                standing_right = rightStandGunUpDiag
+                jump_right = rightJumpGunUpDiag
+        }
+        if dir == "right" and vdir == "down" and keyboard_check(vk_right) and keyboard_check(vk_down){
+            if sprite_index = standing_right or sprite_index = walking_right or sprite_index = jump_right{  
+                walking_right = rightWalkGunDownDiag
+                standing_right = rightStandGunDownDiag
+                jump_right = rightJumpGunDownDiag
+            }
+        }
+        if grenadeAcquire >= 1{
+            with obj_grenade{
+                instance_destroy()
+            }
+        }
+    }
+ if instance_exists(obj_gun){   
+    if sprite_index = leftWalkGunFront or sprite_index = leftStandGunFront or sprite_index = leftJumpGunFront{
+        obj_gun.sprite_index = leftGunFront
+        obj_gun.x = x - 12
+    }
+    if sprite_index = rightWalkGunFront or sprite_index = rightStandGunFront or sprite_index = rightJumpGunFront{
+        obj_gun.sprite_index = rightGunFront
+        obj_gun.x = x + 38
+    }
+    if sprite_index = leftWalkGunUp or sprite_index = leftStandGunUp or sprite_index = leftJumpGunUp{
+        obj_gun.sprite_index = leftGunUp
+        obj_gun.y = y + 16
+        obj_gun.x = x + 10
+    }
+    if sprite_index = rightWalkGunUp or sprite_index = rightStandGunUp or sprite_index = rightJumpGunUp{
+        obj_gun.sprite_index = rightGunUp
+        obj_gun.y = y + 16
+        obj_gun.x = x + 18
+    }
+    if sprite_index = leftWalkGunDown or sprite_index = leftStandGunDown or sprite_index = leftJumpGunDown{
+        obj_gun.sprite_index = leftGunDown
+        obj_gun.y = y + 58
+        obj_gun.x = x + 5
+    }
+    if sprite_index = rightWalkGunDown or sprite_index = rightStandGunDown or sprite_index = rightJumpGunDown{
+        obj_gun.sprite_index = rightGunDown
+        obj_gun.y = y + 58
+        obj_gun.x = x + 23
+    }
+    if sprite_index = leftWalkGunUpDiag or sprite_index = leftStandGunUpDiag or sprite_index = leftJumpGunUpDiag{
+        obj_gun.sprite_index = leftGunUpDiag
+        obj_gun.y = y + 25
+        obj_gun.x = x - 5
+    }
+    if sprite_index = rightWalkGunUpDiag or sprite_index = rightStandGunUpDiag or sprite_index = rightJumpGunUpDiag{
+        obj_gun.sprite_index = rightGunUpDiag
+        obj_gun.y = y + 25
+        obj_gun.x = x + 32
+    }
+    if sprite_index = leftWalkGunDownDiag or sprite_index = leftStandGunDownDiag or sprite_index = leftJumpGunDownDiag{
+        obj_gun.sprite_index = leftGunDownDiag
+        obj_gun.y = y + 50
+        obj_gun.x = x - 9
+    }
+    if sprite_index = rightWalkGunDownDiag or sprite_index = rightStandGunDownDiag or sprite_index = rightJumpGunDownDiag{
+        obj_gun.sprite_index = rightGunDownDiag
+        obj_gun.y = y + 50
+        obj_gun.x = x + 35
+    }
+    }
+    
+  This keeps the gun glues to the player's hand as well as moving the players arm to the proper position depending
+  on which direction they should be shooting.
+  -------------------------------------------------------------------------------------------------
+  
+  
